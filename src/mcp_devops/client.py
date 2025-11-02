@@ -7,7 +7,8 @@ complex development workflows through natural language.
 
 import asyncio
 import os
-from typing import Optional
+from contextlib import AbstractAsyncContextManager
+from typing import Any, Optional
 
 from anthropic import Anthropic
 from mcp import ClientSession, StdioServerParameters
@@ -42,7 +43,7 @@ class PRAssistant:
         """
         self.server_script = server_script
         self.session: Optional[ClientSession] = None
-        self.stdio_context = None
+        self.stdio_context: Optional[AbstractAsyncContextManager[Any]] = None
 
         # Get API key from parameter or environment
         api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
@@ -120,20 +121,20 @@ class PRAssistant:
         ]
 
         # Build conversation for Claude
-        messages = [{"role": "user", "content": query}]
+        messages: Any = [{"role": "user", "content": query}]
 
         # Get response from Claude with tool support
         model_response = self.anthropic.messages.create(
             model=model,
             max_tokens=2000,
             messages=messages,
-            tools=tools,
+            tools=tools,  # type: ignore[arg-type]
         )
 
         # Process response and execute tools
         final_text: list[str] = []
         for part in model_response.content:
-            if part.type == "text":
+            if part.type == "text" and hasattr(part, "text"):
                 final_text.append(part.text)
             elif part.type == "tool_use":
                 # Execute the requested tool
@@ -143,9 +144,11 @@ class PRAssistant:
                 try:
                     result = await self.session.call_tool(tool_name, arguments)
                     # Extract content from result
-                    result_content = (
-                        result.content[0].text if result.content else str(result)
-                    )
+                    result_content = str(result)
+                    if result.content:
+                        first_content = result.content[0]
+                        if hasattr(first_content, "text"):
+                            result_content = first_content.text  # type: ignore[attr-defined]
                     final_text.append(f"\n[Tool: {tool_name}]\n{result_content}\n")
                 except Exception as e:
                     final_text.append(f"\n[Tool {tool_name} failed: {e}]\n")

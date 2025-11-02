@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import git
+from git import GitCommandError, InvalidGitRepositoryError
+from git.objects import Blob
 from mcp.server.fastmcp import FastMCP
 
 
@@ -35,17 +37,18 @@ def create_server(name: str = "devops-helper") -> FastMCP:
         try:
             repo = git.Repo(root)
             matches: List[str] = []
-            for blob in repo.tree().traverse():
-                if blob.type == "blob":
+            for item in repo.tree().traverse():
+                # Type guard: check if it's a Blob
+                if isinstance(item, Blob) and item.type == "blob":
                     try:
-                        content = blob.data_stream.read().decode("utf-8", errors="ignore")
+                        content = item.data_stream.read().decode("utf-8", errors="ignore")
                         if keyword.lower() in content.lower():
-                            matches.append(blob.path)
+                            matches.append(str(item.path))
                     except Exception:
                         # Skip files that can't be read (e.g., binary files)
                         continue
             return matches
-        except git.exc.InvalidGitRepositoryError:
+        except InvalidGitRepositoryError:
             return [f"Error: {root} is not a valid git repository"]
         except Exception as e:
             return [f"Error: {str(e)}"]
@@ -127,7 +130,7 @@ def create_server(name: str = "devops-helper") -> FastMCP:
             if since_tag:
                 try:
                     commits = list(repo.iter_commits(f"{since_tag}..HEAD"))
-                except git.exc.GitCommandError:
+                except GitCommandError:
                     return f"Error: Tag '{since_tag}' not found"
             else:
                 commits = list(repo.iter_commits("HEAD", max_count=max_commits))
@@ -139,11 +142,12 @@ def create_server(name: str = "devops-helper") -> FastMCP:
             notes.append(f"Generated from {len(commits)} commit(s)\n")
             
             for commit in reversed(commits):
-                message = commit.message.strip().split("\n")[0]  # First line only
+                message_str = str(commit.message).strip()
+                message = message_str.split("\n")[0]  # First line only
                 notes.append(f"- {message} ([{commit.hexsha[:7]}])")
             
             return "\n".join(notes)
-        except git.exc.InvalidGitRepositoryError:
+        except InvalidGitRepositoryError:
             return "Error: Not a git repository"
         except Exception as e:
             return f"Error generating release notes: {str(e)}"

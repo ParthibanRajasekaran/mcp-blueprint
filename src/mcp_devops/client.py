@@ -1,16 +1,17 @@
 """
 MCP Client for AI-powered DevOps workflows.
 
-This client connects to an MCP server and uses Claude to orchestrate
+This client connects to an MCP server and uses OpenAI GPT to orchestrate
 complex development workflows through natural language.
 """
 
 import asyncio
+import json
 import os
 from contextlib import AbstractAsyncContextManager
 from typing import Any, Optional
 
-from anthropic import Anthropic
+from openai import OpenAI
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
@@ -20,7 +21,7 @@ class PRAssistant:
     An AI assistant that orchestrates DevOps workflows via an MCP server.
 
     This client connects to a local MCP server, discovers available tools,
-    and uses Claude to intelligently select and execute them based on
+    and uses OpenAI GPT to intelligently select and execute them based on
     natural language requests.
 
     Example:
@@ -36,7 +37,7 @@ class PRAssistant:
 
         Args:
             server_script: Path to the MCP server script
-            api_key: Anthropic API key (defaults to ANTHROPIC_API_KEY env var)
+            api_key: OpenAI API key (defaults to OPENAI_API_KEY env var)
 
         Raises:
             ValueError: If API key is not provided and not in environment
@@ -46,15 +47,15 @@ class PRAssistant:
         self.stdio_context: Optional[AbstractAsyncContextManager[Any]] = None
 
         # Get API key from parameter or environment
-        api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
+        api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError(
-                "ANTHROPIC_API_KEY is required. Set it via environment variable:\n"
-                "  export ANTHROPIC_API_KEY='your-api-key'\n"
+                "OPENAI_API_KEY is required. Set it via environment variable:\n"
+                "  export OPENAI_API_KEY='your-api-key'\n"
                 "Or pass it to the constructor:\n"
                 "  PRAssistant('server.py', api_key='your-api-key')"
             )
-        self.anthropic = Anthropic(api_key=api_key)
+        self.openai = OpenAI(api_key=api_key)
 
     async def connect(self) -> None:
         """
@@ -85,13 +86,13 @@ class PRAssistant:
                 self.stdio_context = None
                 self.session = None
 
-    async def assist(self, query: str, model: str = "claude-3-5-sonnet-20241022") -> str:
+    async def assist(self, query: str, model: str = "gpt-4o") -> str:
         """
         Process a natural language request using AI and available tools.
 
         Args:
             query: Natural language description of the desired workflow
-            model: Claude model to use (default: claude-3-5-sonnet-20241022)
+            model: OpenAI model to use (default: gpt-4o)
 
         Returns:
             The assistant's response, including tool execution results
@@ -113,33 +114,41 @@ class PRAssistant:
         response = await self.session.list_tools()
         tools = [
             {
-                "name": t.name,
-                "description": t.description,
-                "input_schema": t.inputSchema,
+                "type": "function",
+                "function": {
+                    "name": t.name,
+                    "description": t.description,
+                    "parameters": t.inputSchema,
+                }
             }
             for t in response.tools
         ]
 
-        # Build conversation for Claude
+        # Build conversation for GPT
         messages: Any = [{"role": "user", "content": query}]
 
-        # Get response from Claude with tool support
-        model_response = self.anthropic.messages.create(
+        # Get response from OpenAI with tool support
+        model_response = self.openai.chat.completions.create(
             model=model,
             max_tokens=2000,
             messages=messages,
-            tools=tools,  # type: ignore[arg-type]
+            tools=tools,
         )
 
         # Process response and execute tools
         final_text: list[str] = []
-        for part in model_response.content:
-            if part.type == "text" and hasattr(part, "text"):
-                final_text.append(part.text)
-            elif part.type == "tool_use":
-                # Execute the requested tool
-                tool_name = part.name
-                arguments = part.input
+        choice = model_response.choices[0]
+        message = choice.message
+        
+        # Add assistant's text response if present
+        if message.content:
+            final_text.append(message.content)
+        
+        # Execute any tool calls
+        if message.tool_calls:
+            for tool_call in message.tool_calls:
+                tool_name = tool_call.function.name
+                arguments = json.loads(tool_call.function.arguments)
 
                 try:
                     result = await self.session.call_tool(tool_name, arguments)
@@ -159,11 +168,11 @@ class PRAssistant:
 async def main() -> None:
     """Example usage of the PR Assistant."""
     # Check for API key
-    if not os.getenv("ANTHROPIC_API_KEY"):
-        print("❌ ANTHROPIC_API_KEY environment variable not set.")
+    if not os.getenv("OPENAI_API_KEY"):
+        print("❌ OPENAI_API_KEY environment variable not set.")
         print("\nTo use this client:")
-        print("1. Get an API key from: https://console.anthropic.com/")
-        print("2. Set it: export ANTHROPIC_API_KEY='your-key'")
+        print("1. Get an API key from: https://platform.openai.com/api-keys")
+        print("2. Set it: export OPENAI_API_KEY='your-key'")
         print("3. Run this script again")
         return
 

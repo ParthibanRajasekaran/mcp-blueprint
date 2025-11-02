@@ -2,16 +2,17 @@
 MCP Client for the "From Pull Request to Production" blueprint.
 
 This client connects to the local MCP server via the stdio transport,
-lists available tools and leverages the Anthropics API for tool selection.
+lists available tools and leverages the OpenAI API for tool selection.
 
 See README.md for setup and usage instructions.
 """
 
 import asyncio
+import json
 import os
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-from anthropic import Anthropic
+from openai import OpenAI
 
 class PRAssistant:
     """An assistant that orchestrates pull-request workflows via an MCP server."""
@@ -21,13 +22,13 @@ class PRAssistant:
         self.session: ClientSession | None = None
         self.stdio_context = None
         # Check if API key is set
-        api_key = os.getenv("ANTHROPIC_API_KEY")
+        api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError(
-                "ANTHROPIC_API_KEY environment variable is not set. "
-                "Please set it with: export ANTHROPIC_API_KEY='your-api-key'"
+                "OPENAI_API_KEY environment variable is not set. "
+                "Please set it with: export OPENAI_API_KEY='your-api-key'"
             )
-        self.anthropic = Anthropic(api_key=api_key)
+        self.openai = OpenAI(api_key=api_key)
 
     async def connect(self) -> None:
         """Spawn the MCP server and initialise an MCP client session."""
@@ -50,27 +51,35 @@ class PRAssistant:
         response = await self.session.list_tools()
         tools = [
             {
-                "name": t.name,
-                "description": t.description,
-                "input_schema": t.inputSchema,
+                "type": "function",
+                "function": {
+                    "name": t.name,
+                    "description": t.description,
+                    "parameters": t.inputSchema,
+                }
             }
             for t in response.tools
         ]
-        # Build the conversation for Anthropic
+        # Build the conversation for OpenAI
         messages = [
             {"role": "user", "content": query},
         ]
-        model_response = self.anthropic.messages.create(
-            model="claude-3-5-sonnet-20241022", max_tokens=800, messages=messages, tools=tools
+        model_response = self.openai.chat.completions.create(
+            model="gpt-4o", max_tokens=800, messages=messages, tools=tools
         )
         final_text: list[str] = []
-        for part in model_response.content:
-            if part.type == "text":
-                final_text.append(part.text)
-            elif part.type == "tool_use":
-                # Execute the requested tool
-                tool_name = part.name
-                arguments = part.input
+        choice = model_response.choices[0]
+        message = choice.message
+        
+        # Add assistant's text response if present
+        if message.content:
+            final_text.append(message.content)
+        
+        # Execute any tool calls
+        if message.tool_calls:
+            for tool_call in message.tool_calls:
+                tool_name = tool_call.function.name
+                arguments = json.loads(tool_call.function.arguments)
                 result = await self.session.call_tool(tool_name, arguments)
                 # Extract the content from the result
                 result_content = result.content[0].text if result.content else str(result)

@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  mcp-server:
+    build: .
+    container_name: mcp-devops-server
+    volumes:
+      - .:/app
+      - /var/run/docker.sock:/var/run/docker.sock  # For Docker-in-Docker if needed
+    environment:
+      - PYTHONUNBUFFERED=1
+    stdin_open: true
+    tty: true
+    command: python -m mcp_devops.server
+
+  mcp-client:
+    build: .
+    container_name: mcp-devops-client
+    volumes:
+      - .:/app
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - mcp-server
+    command: python -m mcp_devops.client

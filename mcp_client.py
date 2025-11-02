@@ -41,7 +41,10 @@ class PRAssistant:
     async def disconnect(self) -> None:
         """Disconnect from the MCP server."""
         if self.stdio_context:
-            await self.stdio_context.__aexit__(None, None, None)
+            try:
+                await self.stdio_context.__aexit__(None, None, None)
+            except Exception:
+                pass  # Ignore cleanup errors
 
     async def assist(self, query: str) -> str:
         """Handle a natural-language request and orchestrate tool calls accordingly."""
@@ -89,13 +92,20 @@ class PRAssistant:
 async def main() -> None:
     assistant = PRAssistant("mcp_server.py")
     try:
+        print("🔌 Connecting to MCP server...")
         await assistant.connect()
+        print("✓ Connected!\n")
+        
         result = await assistant.assist(
-            "Create a PR for feature X, run the tests, summarise any failures, and draft release notes."
+            "Search for files containing 'MCP', run the tests, and generate release notes from the last 5 commits."
         )
+        print("📝 Result:")
         print(result)
+    except Exception as e:
+        print(f"❌ Error: {e}")
     finally:
         await assistant.disconnect()
+        print("\n✓ Disconnected")
 
 if __name__ == "__main__":
     asyncio.run(main())

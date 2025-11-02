@@ -19,7 +19,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # 3. Set API key (for AI client)
-export ANTHROPIC_API_KEY='your-api-key-here'
+export OPENAI_API_KEY='your-api-key-here'
 
 # 4. Test the server
 python test_server.py
@@ -36,7 +36,7 @@ docker-compose up --build
 
 # Or build manually
 docker build -t mcp-devops .
-docker run -e ANTHROPIC_API_KEY='your-key' mcp-devops
+docker run -e OPENAI_API_KEY='your-key' mcp-devops
 ```
 
 ## Verify Installation
@@ -61,7 +61,7 @@ Starting MCP server...
 ### Test the Client (Requires API Key)
 
 ```bash
-export ANTHROPIC_API_KEY='your-key'
+export OPENAI_API_KEY='your-key'
 python mcp_client.py
 ```
 
@@ -75,12 +75,12 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Issue: "ANTHROPIC_API_KEY not set"
+### Issue: "OPENAI_API_KEY not set"
 **Solution:** Get an API key and set it
 
 ```bash
-# Get key from: https://console.anthropic.com/
-export ANTHROPIC_API_KEY='sk-ant-...'
+# Get key from: https://platform.openai.com/api-keys
+export OPENAI_API_KEY='sk-proj-...'
 ```
 
 ### Issue: Tests fail

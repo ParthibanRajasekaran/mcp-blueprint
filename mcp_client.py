@@ -90,7 +90,8 @@ class PRAssistant:
         return "".join(final_text)
 
 async def main() -> None:
-    assistant = PRAssistant("mcp_server.py")
+    # Use the modular server implementation
+    assistant = PRAssistant("src/mcp_devops/server.py")
     try:
         print("🔌 Connecting to MCP server...")
         await assistant.connect()

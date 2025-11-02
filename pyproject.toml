@@ -28,6 +28,8 @@ dependencies = [
     "anthropic>=0.39.0",
     "gitpython>=3.1.0",
     "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
 ]
 
 [project.optional-dependencies]
@@ -36,15 +38,19 @@ dev = [
     "ruff>=0.6.0",
     "mypy>=1.8.0",
     "pre-commit>=3.6.0",
-    "pytest-cov>=4.1.0",
-    "pytest-asyncio>=0.23.0",
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/mcp-blueprint"
-Documentation = "https://github.com/yourusername/mcp-blueprint#readme"
-Repository = "https://github.com/yourusername/mcp-blueprint"
-Issues = "https://github.com/yourusername/mcp-blueprint/issues"
+Homepage = "https://github.com/ParthibanRajasekaran/mcp-blueprint"
+Documentation = "https://github.com/ParthibanRajasekaran/mcp-blueprint#readme"
+Repository = "https://github.com/ParthibanRajasekaran/mcp-blueprint"
+Issues = "https://github.com/ParthibanRajasekaran/mcp-blueprint/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+mcp_devops = ["py.typed"]
 
 [tool.black]
 line-length = 100

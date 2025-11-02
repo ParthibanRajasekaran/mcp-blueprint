@@ -132,7 +132,7 @@ class PRAssistant:
             model=model,
             max_tokens=2000,
             messages=messages,
-            tools=tools,
+            tools=tools,  # type: ignore[arg-type]
         )
 
         # Process response and execute tools
@@ -147,8 +147,12 @@ class PRAssistant:
         # Execute any tool calls
         if message.tool_calls:
             for tool_call in message.tool_calls:
-                tool_name = tool_call.function.name
-                arguments = json.loads(tool_call.function.arguments)
+                # Type guard: only process function tool calls
+                if hasattr(tool_call, "function"):
+                    tool_name = tool_call.function.name  # type: ignore[attr-defined]
+                    arguments = json.loads(tool_call.function.arguments)  # type: ignore[attr-defined]
+                else:
+                    continue
 
                 try:
                     result = await self.session.call_tool(tool_name, arguments)

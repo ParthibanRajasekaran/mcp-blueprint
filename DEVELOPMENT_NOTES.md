@@ -30,7 +30,7 @@ mcp-blueprint/
 ├── requirements.txt        # Pinned dependencies
 ├── Dockerfile              # Container support
 ├── docker-compose.yml      # Multi-container setup
-└── setup.py                # Interactive setup script
+└── setup_interactive.py    # Interactive setup script
 ```
 
 ### 2. 📚 Comprehensive Documentation
@@ -173,7 +173,7 @@ mcp-blueprint/
 
 ```bash
 # 1. Test the automated setup
-python setup.py
+python setup_interactive.py
 
 # 2. Test the server (no API key needed)
 python mcp_server.py

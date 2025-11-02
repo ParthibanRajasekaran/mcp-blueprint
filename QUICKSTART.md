@@ -2,16 +2,10 @@
 
 Get up and running with MCP DevOps Blueprint in 5 minutes!
 
-## Option 1: Automated Setup (Recommended)
+### Option 1: Interactive Setup (Recommended)
 
 ```bash
-# Run the setup script
-python setup.py
-
-# Follow the prompts to choose your setup type:
-# 1. Basic (just dependencies)
-# 2. Development (with pre-commit hooks)
-# 3. Full (development + run tests)
+python setup_interactive.py
 ```
 
 ## Option 2: Manual Setup

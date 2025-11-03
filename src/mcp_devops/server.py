@@ -6,6 +6,7 @@ and release note generation via the Model Context Protocol (MCP).
 """
 
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -13,6 +14,10 @@ import git
 from git import GitCommandError, InvalidGitRepositoryError
 from git.objects import Blob
 from mcp.server.fastmcp import FastMCP
+
+# Ensure stdout is unbuffered for proper stdio communication
+sys.stdout.reconfigure(line_buffering=True)
+sys.stderr.reconfigure(line_buffering=True)
 
 
 def create_server(name: str = "devops-helper") -> FastMCP:

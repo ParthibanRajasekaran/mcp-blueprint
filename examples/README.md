@@ -32,21 +32,13 @@ python examples/custom_tools.py
 - `analyze_code_metrics` - Basic code metrics for Python files
 - `create_deployment_checklist` - Generate deployment checklists
 
-### 3. CI/CD Workflow (`ci_cd_workflow.py`)
-Complete CI/CD workflow using AI orchestration with Claude.
-
-**Requirements:** ANTHROPIC_API_KEY environment variable
+### 3. HTTP Client with OpenAI (root `mcp_client_http.py`)
+AI-orchestrated workflow using OpenAI and the HTTP/SSE transport.
 
 ```bash
-export ANTHROPIC_API_KEY='your-api-key'
-python examples/ci_cd_workflow.py
+export OPENAI_API_KEY='your-openai-key'
+python mcp_client_http.py
 ```
-
-**Scenarios demonstrated:**
-- Pre-deployment checks
-- Code quality analysis
-- Release note generation
-- Complete deployment workflow
 
 ## Running the Examples
 
@@ -55,9 +47,9 @@ python examples/ci_cd_workflow.py
    pip install -r requirements.txt
    ```
 
-2. **For AI-powered examples, set your API key:**
+2. **For AI-powered examples, set your OpenAI API key:**
    ```bash
-   export ANTHROPIC_API_KEY='your-key-from-anthropic'
+   export OPENAI_API_KEY='sk-proj-...'
    ```
 
 3. **Run any example:**

@@ -5,7 +5,7 @@ This example shows how to extend the MCP server with custom tools
 for your specific DevOps workflows.
 """
 
-from typing import Dict, List
+from typing import Dict, List, Any
 from mcp.server.fastmcp import FastMCP
 import subprocess
 import json
@@ -91,7 +91,7 @@ def list_git_branches(repository_path: str = ".") -> List[str]:
 
 
 @mcp.tool()
-def analyze_code_metrics(directory: str = "src") -> Dict[str, int]:
+def analyze_code_metrics(directory: str = "src") -> Dict[str, Any]:
     """
     Analyze basic code metrics for Python files.
     
@@ -104,7 +104,7 @@ def analyze_code_metrics(directory: str = "src") -> Dict[str, int]:
     import os
     from pathlib import Path
     
-    metrics = {
+    metrics: Dict[str, Any] = {
         "total_files": 0,
         "total_lines": 0,
         "total_functions": 0,
@@ -159,12 +159,13 @@ def create_deployment_checklist(environment: str = "production") -> List[str]:
 
 
 if __name__ == "__main__":
-    print("Custom MCP DevOps Server")
+    print("Custom MCP DevOps Server (HTTP/SSE)")
     print("=" * 50)
     print("\nAvailable custom tools:")
     print("  - check_docker_status")
     print("  - list_git_branches")
     print("  - analyze_code_metrics")
     print("  - create_deployment_checklist")
-    print("\nStarting server...")
-    mcp.run()
+    print("\nStarting server on http://localhost:8000/sse ...")
+    # Run with SSE (HTTP) transport for reliability
+    mcp.run(transport="sse")

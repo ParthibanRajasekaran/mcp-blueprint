@@ -7,6 +7,5 @@ __author__ = "Your Name"
 __email__ = "your.email@example.com"
 
 from .server import create_server
-from .client import PRAssistant
 
-__all__ = ["create_server", "PRAssistant"]
+__all__ = ["create_server"]
